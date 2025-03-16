@@ -62,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				divider: '#e2e8f0',
+				'divider-light': '#f1f5f9',
+				soft: {
+					gray: '#F6F6F7',
+					blue: '#F1F0FB',
+					green: '#EDFCF2',
+					yellow: '#FFF8E6',
 				}
 			},
 			borderRadius: {
@@ -125,4 +133,3 @@ export default {
 	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-
