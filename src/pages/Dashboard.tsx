@@ -12,12 +12,13 @@ import { MyJarsTab } from "@/components/dashboard/MyJarsTab";
 import { InvitedJarsTab } from "@/components/dashboard/InvitedJarsTab";
 import { NotificationsTab } from "@/components/dashboard/NotificationsTab";
 import { LoadingDashboard } from "@/components/dashboard/LoadingDashboard";
+import type { CoinJar, InvitedJar, Notification } from "@/types/dashboard";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [myJars, setMyJars] = useState([]);
-  const [invitedJars, setInvitedJars] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [myJars, setMyJars] = useState<CoinJar[]>([]);
+  const [invitedJars, setInvitedJars] = useState<InvitedJar[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -28,7 +29,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch CoinJars created by the user
+        // Fetch CoinJars created by the user with basic error handling
         const { data: createdJars, error: createdJarsError } = await supabase
           .from('recipient_coinjar')
           .select(`
@@ -41,40 +42,62 @@ const Dashboard = () => {
           `)
           .eq('creator_id', user.id);
         
-        if (createdJarsError) throw createdJarsError;
+        if (createdJarsError) {
+          console.error("Error fetching jars:", createdJarsError);
+          toast({
+            title: "Failed to load coin jars",
+            description: createdJarsError.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         
-        // Calculate total contributions for each jar
-        const jarsWithTotals = createdJars.map(jar => {
-          // Convert amount to number before summing them
-          const totalAmount = jar.coinjar_contributions.reduce(
-            (sum, contribution) => sum + (typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount), 
-            0
-          );
+        if (!createdJars) {
+          console.log("No jars found, setting empty array");
+          setMyJars([]);
+        } else {
+          // Calculate total contributions for each jar
+          const jarsWithTotals = createdJars.map(jar => {
+            // Convert amount to number before summing them
+            const totalAmount = jar.coinjar_contributions
+              ? jar.coinjar_contributions.reduce((sum, contribution) => {
+                  const amount = typeof contribution.amount === 'string' 
+                    ? parseFloat(contribution.amount) 
+                    : contribution.amount;
+                  return sum + (isNaN(amount) ? 0 : amount);
+                }, 0)
+              : 0;
+            
+            // Random delivery status for demo purposes - replace with real status in production
+            const deliveryStatuses = ['pending', 'processing', 'delivered'];
+            const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
+            
+            // Fix the type error by ensuring target_amount and percent_complete are numbers
+            const targetAmount = 100; // Example target, replace with real target from DB
+            const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
+            
+            return {
+              ...jar,
+              total_amount: totalAmount,
+              delivery_status: randomStatus as 'pending' | 'processing' | 'delivered',
+              target_amount: targetAmount,
+              percent_complete: percentComplete,
+              // Convert contribution amounts to numbers if they are strings
+              coinjar_contributions: jar.coinjar_contributions 
+                ? jar.coinjar_contributions.map(contribution => ({
+                    amount: typeof contribution.amount === 'string' 
+                      ? parseFloat(contribution.amount) 
+                      : contribution.amount
+                  }))
+                : []
+            } as CoinJar;
+          });
           
-          // Random delivery status for demo purposes - replace with real status in production
-          const deliveryStatuses = ['pending', 'processing', 'delivered'];
-          const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
-          
-          // Fix the type error by ensuring target_amount and percent_complete are numbers
-          const targetAmount = 100; // Example target, replace with real target from DB
-          const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
-          
-          return {
-            ...jar,
-            total_amount: totalAmount,
-            delivery_status: randomStatus,
-            target_amount: targetAmount,
-            percent_complete: percentComplete,
-            // Convert contribution amounts to numbers if they are strings
-            coinjar_contributions: jar.coinjar_contributions.map(contribution => ({
-              amount: typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount
-            }))
-          };
-        });
+          setMyJars(jarsWithTotals);
+        }
         
-        setMyJars(jarsWithTotals);
-        
-        // Fetch real invitations now that we have proper RLS policies
+        // Fetch real invitations with proper error handling
         const { data: invitations, error: invitationsError } = await supabase
           .from('coinjar_invitations')
           .select(`
@@ -99,7 +122,7 @@ const Dashboard = () => {
               target_amount: 100,
               percent_complete: 0,
               delivery_status: 'pending'
-            };
+            } as InvitedJar;
           }) || [];
           
           setInvitedJars(processedInvitations);
@@ -122,7 +145,7 @@ const Dashboard = () => {
             read: true
           }
         ]);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
         toast({
           title: "Failed to load dashboard",
