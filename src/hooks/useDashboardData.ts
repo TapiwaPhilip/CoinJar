@@ -20,11 +20,11 @@ export const useDashboardData = (userId: string | undefined) => {
         
         console.log("Fetching data for user ID:", userId);
         
-        // STEP 1: Fetch basic CoinJar data with a simple query
+        // STEP 1: Fetch CoinJars created by the current user
+        // The RLS policy will automatically filter to show only the user's jars
         const { data: myJarsBasic, error: myJarsError } = await supabase
           .from('recipient_coinjar')
-          .select('id, name, relationship, email, created_at, creator_id')
-          .eq('creator_id', userId);
+          .select('id, name, relationship, email, created_at, creator_id');
         
         if (myJarsError) {
           console.error("Error fetching CoinJars:", myJarsError);
@@ -41,28 +41,41 @@ export const useDashboardData = (userId: string | undefined) => {
         
         let enhancedJars: CoinJar[] = [];
 
-        // STEP 2: If we have jars, fetch their contributions separately
+        // STEP 2: Process the jars and get their contributions
         if (myJarsBasic && myJarsBasic.length > 0) {
-          enhancedJars = await Promise.all(myJarsBasic.map(async (jar) => {
-            // Fetch contributions for this specific jar
-            const { data: contributions, error: contribError } = await supabase
-              .from('coinjar_contributions')
-              .select('amount')
-              .eq('coinjar_id', jar.id);
-              
-            if (contribError) {
-              console.error(`Error fetching contributions for jar ${jar.id}:`, contribError);
-            }
+          // Get all jar IDs for a batch query
+          const jarIds = myJarsBasic.map(jar => jar.id);
+          
+          // Fetch all contributions in a single batch query
+          const { data: allContributions, error: batchContribError } = await supabase
+            .from('coinjar_contributions')
+            .select('coinjar_id, amount')
+            .in('coinjar_id', jarIds);
             
-            // Calculate total and percentage
-            const totalAmount = contributions 
-              ? contributions.reduce((sum, contribution) => {
-                  const amount = typeof contribution.amount === 'string' 
-                    ? parseFloat(contribution.amount) 
-                    : contribution.amount;
-                  return sum + (isNaN(amount) ? 0 : amount);
-                }, 0)
-              : 0;
+          if (batchContribError) {
+            console.error("Error fetching contributions batch:", batchContribError);
+          }
+          
+          // Group contributions by jar ID
+          const contributionsByJarId = (allContributions || []).reduce((acc, contrib) => {
+            if (!acc[contrib.coinjar_id]) {
+              acc[contrib.coinjar_id] = [];
+            }
+            acc[contrib.coinjar_id].push(contrib);
+            return acc;
+          }, {} as Record<string, any[]>);
+          
+          // Process each jar with its contributions
+          enhancedJars = myJarsBasic.map(jar => {
+            const jarContributions = contributionsByJarId[jar.id] || [];
+            
+            // Calculate total contributions
+            const totalAmount = jarContributions.reduce((sum, contribution) => {
+              const amount = typeof contribution.amount === 'string' 
+                ? parseFloat(contribution.amount) 
+                : contribution.amount;
+              return sum + (isNaN(amount) ? 0 : amount);
+            }, 0);
             
             // Mock data for demo purposes - replace with real data in production
             const targetAmount = 100;
@@ -76,9 +89,9 @@ export const useDashboardData = (userId: string | undefined) => {
               target_amount: targetAmount,
               percent_complete: percentComplete,
               delivery_status: randomStatus as 'pending' | 'processing' | 'delivered',
-              coinjar_contributions: contributions || []
+              coinjar_contributions: jarContributions
             } as CoinJar;
-          }));
+          });
         } else {
           // Create a dummy jar if no jars were found
           const dummyJar: CoinJar = {
@@ -103,57 +116,58 @@ export const useDashboardData = (userId: string | undefined) => {
         
         setMyJars(enhancedJars);
         
-        // STEP 3: Fetch invitations with a direct query
+        // STEP 3: Fetch invitations with a direct, flat query
+        // The RLS policy will limit to only invitations for this user
         const { data: invitations, error: invitationsError } = await supabase
           .from('coinjar_invitations')
           .select('id, coinjar_id')
-          .eq('invited_user_id', userId)
           .eq('accepted', false);
           
         if (invitationsError) {
           console.error('Error fetching invitations:', invitationsError);
           setInvitedJars([]);
         } else if (invitations && invitations.length > 0) {
-          // For each invitation, fetch the jar details directly
-          const processedInvitations = await Promise.all(invitations.map(async (invitation) => {
-            try {
-              // Simple direct query for each jar
-              const { data: jarData, error: jarError } = await supabase
-                .from('recipient_coinjar')
-                .select('id, name, relationship, created_at, creator_id')
-                .eq('id', invitation.coinjar_id)
-                .maybeSingle();
-                
-              if (jarError) {
-                console.error(`Error fetching jar data for invitation ${invitation.id}:`, jarError);
-                return null;
-              }
-              
-              if (!jarData) {
-                console.warn(`No jar found for invitation ${invitation.id}`);
-                return null;
-              }
-                
-              return {
-                id: invitation.id,
-                name: jarData.name || 'Unknown CoinJar',
-                relationship: jarData.relationship || 'Unknown',
-                total_amount: 0, // Default values for invited jars
-                target_amount: 100,
-                percent_complete: 0,
-                delivery_status: 'pending',
-                created_at: jarData.created_at || new Date().toISOString(),
-                coinjar_contributions: [],
-                creator_id: jarData.creator_id
-              } as InvitedJar;
-            } catch (err) {
-              console.error(`Error processing invitation ${invitation.id}:`, err);
-              return null;
-            }
-          }));
+          // Get all jar IDs from invitations
+          const invitedJarIds = invitations.map(inv => inv.coinjar_id);
           
-          // Filter out null values (failed fetches)
-          setInvitedJars(processedInvitations.filter(Boolean) as InvitedJar[]);
+          // Fetch all invited jars in a single batch query
+          const { data: invitedJarsData, error: invitedJarsError } = await supabase
+            .from('recipient_coinjar')
+            .select('id, name, relationship, created_at, creator_id')
+            .in('id', invitedJarIds);
+            
+          if (invitedJarsError) {
+            console.error('Error fetching invited jars batch:', invitedJarsError);
+            setInvitedJars([]);
+          } else {
+            // Process invited jars
+            const invitedJarsMap = new Map();
+            invitedJarsData?.forEach(jar => {
+              invitedJarsMap.set(jar.id, jar);
+            });
+            
+            const processedInvitations = invitations
+              .map(invitation => {
+                const jarData = invitedJarsMap.get(invitation.coinjar_id);
+                if (!jarData) return null;
+                
+                return {
+                  id: invitation.id,
+                  name: jarData.name || 'Unknown CoinJar',
+                  relationship: jarData.relationship || 'Unknown',
+                  total_amount: 0, // Default values for invited jars
+                  target_amount: 100,
+                  percent_complete: 0,
+                  delivery_status: 'pending',
+                  created_at: jarData.created_at || new Date().toISOString(),
+                  coinjar_contributions: [],
+                  creator_id: jarData.creator_id
+                } as InvitedJar;
+              })
+              .filter(Boolean) as InvitedJar[];
+            
+            setInvitedJars(processedInvitations);
+          }
         } else {
           setInvitedJars([]);
         }
