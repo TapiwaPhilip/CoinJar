@@ -3,16 +3,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+
 const RecipientProfile = () => {
   const [formData, setFormData] = useState({
     name: "",
     relationship: "",
     email: ""
   });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission in future implementation
   };
+
   return <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto max-w-md">
         <Card className="p-6 glass-card">
@@ -40,11 +43,12 @@ const RecipientProfile = () => {
             })} placeholder="recipient@example.com" />
             </div>
             <Button type="submit" className="w-full">
-              Create Profile
+              Create CoinJar
             </Button>
           </form>
         </Card>
       </div>
     </div>;
 };
+
 export default RecipientProfile;
