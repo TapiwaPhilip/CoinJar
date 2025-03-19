@@ -20,7 +20,7 @@ export const useDashboardData = (userId: string | undefined) => {
         
         console.log("Fetching CoinJars for user ID:", userId);
         
-        // Fetch CoinJars created by the user with basic error handling
+        // Simplify the query to avoid recursion issues
         const { data: createdJars, error: createdJarsError } = await supabase
           .from('recipient_coinjar')
           .select(`
@@ -29,8 +29,7 @@ export const useDashboardData = (userId: string | undefined) => {
             relationship, 
             email, 
             created_at,
-            creator_id,
-            coinjar_contributions(amount)
+            creator_id
           `)
           .eq('creator_id', userId);
         
@@ -51,11 +50,17 @@ export const useDashboardData = (userId: string | undefined) => {
           console.log("No jars found, setting empty array");
           setMyJars([]);
         } else {
-          // Calculate total contributions for each jar
-          const jarsWithTotals = createdJars.map(jar => {
-            // Convert amount to number before summing them
-            const totalAmount = jar.coinjar_contributions
-              ? jar.coinjar_contributions.reduce((sum, contribution) => {
+          // Get contributions in a separate query to avoid recursion
+          const jarsWithTotals = await Promise.all(createdJars.map(async (jar) => {
+            // Fetch contributions separately
+            const { data: contributions } = await supabase
+              .from('coinjar_contributions')
+              .select('amount')
+              .eq('coinjar_id', jar.id);
+              
+            // Calculate total contributions
+            const totalAmount = contributions 
+              ? contributions.reduce((sum, contribution) => {
                   const amount = typeof contribution.amount === 'string' 
                     ? parseFloat(contribution.amount) 
                     : contribution.amount;
@@ -77,52 +82,54 @@ export const useDashboardData = (userId: string | undefined) => {
               delivery_status: randomStatus as 'pending' | 'processing' | 'delivered',
               target_amount: targetAmount,
               percent_complete: percentComplete,
-              // Convert contribution amounts to numbers if they are strings
-              coinjar_contributions: jar.coinjar_contributions 
-                ? jar.coinjar_contributions.map(contribution => ({
-                    amount: typeof contribution.amount === 'string' 
-                      ? parseFloat(contribution.amount) 
-                      : contribution.amount
-                  }))
-                : []
+              coinjar_contributions: contributions || []
             } as CoinJar;
-          });
+          }));
           
           setMyJars(jarsWithTotals);
         }
         
-        // Fetch real invitations with proper error handling
-        const { data: invitations, error: invitationsError } = await supabase
-          .from('coinjar_invitations')
-          .select(`
-            id,
-            coinjar_id,
-            recipient_coinjar(id, name, relationship, created_at, creator_id)
-          `)
-          .eq('invited_user_id', userId)
-          .eq('accepted', false);
-        
-        if (invitationsError) {
-          console.error('Error fetching invitations:', invitationsError);
-          // Continue execution rather than throwing, to avoid blocking dashboard load
-        } else {
-          // Process invitations if we successfully fetched them
-          const processedInvitations = invitations?.map(invitation => {
-            return {
-              id: invitation.id,
-              name: invitation.recipient_coinjar?.name || 'Unknown CoinJar',
-              relationship: invitation.recipient_coinjar?.relationship || 'Unknown',
-              total_amount: 0, // Default values for invited jars
-              target_amount: 100,
-              percent_complete: 0,
-              delivery_status: 'pending',
-              created_at: invitation.recipient_coinjar?.created_at || new Date().toISOString(),
-              coinjar_contributions: [],
-              creator_id: invitation.recipient_coinjar?.creator_id
-            } as InvitedJar;
-          }) || [];
-          
-          setInvitedJars(processedInvitations);
+        // Use a simplified query for invitations to avoid recursion
+        try {
+          // Get only the IDs first
+          const { data: invitationIds, error: invitationIdsError } = await supabase
+            .from('coinjar_invitations')
+            .select('id, coinjar_id')
+            .eq('invited_user_id', userId)
+            .eq('accepted', false);
+            
+          if (invitationIdsError) {
+            console.error('Error fetching invitation IDs:', invitationIdsError);
+          } else if (invitationIds && invitationIds.length > 0) {
+            // Then get the jar details separately for each invitation
+            const processedInvitations = await Promise.all(invitationIds.map(async (invitation) => {
+              const { data: jarData } = await supabase
+                .from('recipient_coinjar')
+                .select('id, name, relationship, created_at, creator_id')
+                .eq('id', invitation.coinjar_id)
+                .maybeSingle();
+                
+              return {
+                id: invitation.id,
+                name: jarData?.name || 'Unknown CoinJar',
+                relationship: jarData?.relationship || 'Unknown',
+                total_amount: 0, // Default values for invited jars
+                target_amount: 100,
+                percent_complete: 0,
+                delivery_status: 'pending',
+                created_at: jarData?.created_at || new Date().toISOString(),
+                coinjar_contributions: [],
+                creator_id: jarData?.creator_id
+              } as InvitedJar;
+            }));
+            
+            setInvitedJars(processedInvitations);
+          } else {
+            setInvitedJars([]);
+          }
+        } catch (error) {
+          console.error('Error processing invitations:', error);
+          setInvitedJars([]);
         }
         
         // Mock notifications - replace with real notifications in production
