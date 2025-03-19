@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Users, CreditCard, ChartBar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { MainNav } from "@/components/MainNav";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
+      {/* Navigation */}
+      <MainNav />
+      
       {/* Hero Section */}
       <section className="relative py-20 px-6">
         <div className="container mx-auto max-w-6xl">
@@ -68,4 +72,3 @@ const Index = () => {
 };
 
 export default Index;
-

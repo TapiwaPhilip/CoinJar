@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import RecipientProfile from "./pages/RecipientProfile";
 import Contributions from "./pages/Contributions";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/recipient-profile" element={<RecipientProfile />} />
           <Route path="/contributions" element={<Contributions />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -31,4 +33,3 @@ const App = () => (
 );
 
 export default App;
-
