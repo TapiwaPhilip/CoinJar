@@ -8,12 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
+  const [error, setError] = useState("");
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -26,10 +29,22 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
     
     try {
       setIsSubmitting(true);
       await signIn(email, password);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to sign in. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -37,10 +52,27 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    
+    if (!name || !email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
     
     try {
       setIsSubmitting(true);
       await signUp(email, password, name);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to create account. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +90,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-6">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center mb-8 text-lg font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-          Family Funds Circle
+          CoinJar
         </Link>
         
         <Card className="border border-primary/10 shadow-md">
@@ -69,7 +101,19 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <Tabs 
+              defaultValue="signin" 
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -115,6 +159,15 @@ const Auth = () => {
                       "Sign In"
                     )}
                   </Button>
+                  <div className="text-center mt-2">
+                    <button 
+                      type="button" 
+                      className="text-sm text-primary hover:underline" 
+                      onClick={() => setActiveTab("signup")}
+                    >
+                      Don't have an account? Sign up
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
               
@@ -154,6 +207,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       disabled={isSubmitting}
+                      minLength={6}
                     />
                   </div>
                   <Button 
@@ -170,6 +224,15 @@ const Auth = () => {
                       "Create Account"
                     )}
                   </Button>
+                  <div className="text-center mt-2">
+                    <button 
+                      type="button" 
+                      className="text-sm text-primary hover:underline" 
+                      onClick={() => setActiveTab("signin")}
+                    >
+                      Already have an account? Sign in
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>

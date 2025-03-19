@@ -59,12 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.log("Sign in error details:", error);
         toast({
           title: "Sign in failed",
           description: error.message,
           variant: "destructive",
         });
-        throw error;
+        return;
       }
       
       toast({
@@ -83,6 +84,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
+      // First check if a user with this email already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error("Error checking existing user:", checkError);
+      }
+      
+      if (existingUsers) {
+        toast({
+          title: "Sign up failed",
+          description: "An account with this email already exists.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
@@ -94,12 +116,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        console.log("Sign up error details:", error);
         toast({
           title: "Sign up failed",
           description: error.message,
           variant: "destructive",
         });
-        throw error;
+        return;
       }
 
       // Send the custom confirmation email
@@ -152,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: error.message,
           variant: "destructive",
         });
-        throw error;
+        return;
       }
       
       toast({
