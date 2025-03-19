@@ -31,7 +31,8 @@ const CoinJarDetail = () => {
       try {
         setLoading(true);
         
-        // Fetch CoinJar details
+        // Fetch CoinJar details without including the coinjar_invitations
+        // which was causing the recursive policy issue
         const { data: jarData, error: jarError } = await supabase
           .from('recipient_coinjar')
           .select(`
