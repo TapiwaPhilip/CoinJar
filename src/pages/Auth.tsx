@@ -17,13 +17,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const returnTo = location.state?.returnTo || "/dashboard";
-
+  // Always redirect to dashboard after successful authentication
   useEffect(() => {
     if (user && !isLoading) {
-      navigate(returnTo);
+      navigate("/dashboard");
     }
-  }, [user, isLoading, navigate, returnTo]);
+  }, [user, isLoading, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +36,7 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       await signIn(email, password);
+      // Navigation handled in useEffect
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -65,6 +65,7 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       await signUp(email, password, name);
+      // Navigation handled in useEffect
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -95,9 +96,7 @@ const Auth = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Welcome</CardTitle>
             <CardDescription className="text-center">
-              {returnTo === "/recipient-profile" ? 
-                "Sign in to continue creating your CoinJar" : 
-                "Sign in to your account or create a new one"}
+              Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           <CardContent>
