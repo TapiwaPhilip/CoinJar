@@ -41,23 +41,22 @@ const CoinJarDetail = () => {
         console.log("Fetching CoinJar with ID:", id);
         console.log("Current user ID:", user?.id);
         
-        // Fetch basic CoinJar details without nesting relations
+        // STEP 1: Fetch basic jar details with a simple query
         const { data: jarData, error: jarError } = await supabase
           .from('recipient_coinjar')
-          .select(`
-            id, 
-            name, 
-            relationship, 
-            email, 
-            created_at,
-            creator_id
-          `)
+          .select('id, name, relationship, email, created_at, creator_id')
           .eq('id', id)
           .maybeSingle();
           
         if (jarError) {
           console.error('Error fetching jar details:', jarError);
-          throw jarError;
+          toast({
+            title: "Failed to load CoinJar details",
+            description: jarError.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
         }
         
         if (!jarData) {
@@ -69,7 +68,7 @@ const CoinJarDetail = () => {
         
         console.log("Retrieved jar data:", jarData);
         
-        // Fetch contributions separately
+        // STEP 2: Fetch contributions in a separate query
         const { data: contributions, error: contribError } = await supabase
           .from('coinjar_contributions')
           .select('amount')
@@ -77,6 +76,11 @@ const CoinJarDetail = () => {
           
         if (contribError) {
           console.error('Error fetching contributions:', contribError);
+          toast({
+            title: "Failed to load contributions",
+            description: contribError.message,
+            variant: "destructive",
+          });
         }
         
         // Calculate totals
@@ -113,14 +117,14 @@ const CoinJarDetail = () => {
         
         setJar(processedJar);
         
-        // Fetch real contributors from the database if available
-        // For now, using mock data
+        // Mock contributors data
+        // In production, fetch this from a real contributors table
         setContributors([
           { id: 1, name: "Jane Smith", amount: 25, date: new Date().toISOString() },
           { id: 2, name: "John Doe", amount: 50, date: new Date(Date.now() - 86400000).toISOString() }
         ]);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching jar details:', error);
         toast({
           title: "Failed to load CoinJar details",
