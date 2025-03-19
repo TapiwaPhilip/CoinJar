@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormEvent } from "react";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type RecipientFormData = {
   name: string;
@@ -16,13 +18,15 @@ interface RecipientFormProps {
   onChange: (field: keyof RecipientFormData, value: string) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   isSubmitting: boolean;
+  error?: string | null;
 }
 
 const RecipientForm = ({ 
   formData, 
   onChange, 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  error
 }: RecipientFormProps) => {
   return (
     <Card className="p-6 glass-card">
@@ -30,6 +34,12 @@ const RecipientForm = ({
         <CardTitle className="text-2xl font-semibold">Create Recipient CoinJar</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Recipient Name</Label>
@@ -38,6 +48,7 @@ const RecipientForm = ({
               value={formData.name} 
               onChange={e => onChange("name", e.target.value)} 
               placeholder="e.g., Grandma Didi" 
+              required
             />
           </div>
           <div className="space-y-2">
@@ -47,6 +58,7 @@ const RecipientForm = ({
               value={formData.relationship} 
               onChange={e => onChange("relationship", e.target.value)} 
               placeholder="e.g., Grandmother" 
+              required
             />
           </div>
           <div className="space-y-2">

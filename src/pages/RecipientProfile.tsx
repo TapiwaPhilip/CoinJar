@@ -8,6 +8,7 @@ const RecipientProfile = () => {
     isSubmitting, 
     isLoading, 
     user, 
+    error,
     handleInputChange, 
     handleSubmit 
   } = useRecipientForm();
@@ -34,6 +35,7 @@ const RecipientProfile = () => {
           onChange={handleInputChange}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
+          error={error}
         />
       </div>
     </div>

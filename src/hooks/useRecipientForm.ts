@@ -20,6 +20,7 @@ export function useRecipientForm() {
     email: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -66,6 +67,8 @@ export function useRecipientForm() {
       ...prev,
       [field]: value
     }));
+    // Clear any error when user starts typing
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -87,6 +90,7 @@ export function useRecipientForm() {
     }
 
     if (!formData.name || !formData.relationship) {
+      setError("Please provide both a name and relationship");
       toast({
         title: "Missing information",
         description: "Please provide both a name and relationship",
@@ -97,9 +101,12 @@ export function useRecipientForm() {
 
     try {
       setIsSubmitting(true);
+      setError(null);
+      
+      console.log("Creating CoinJar with user ID:", user.id);
       
       // Insert the CoinJar and get the generated ID
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('recipient_coinjar')
         .insert({
           creator_id: user.id,
@@ -110,8 +117,9 @@ export function useRecipientForm() {
         .select('id')
         .single();
       
-      if (error) {
-        throw error;
+      if (insertError) {
+        console.error("Insert error details:", insertError);
+        throw insertError;
       }
       
       toast({
@@ -131,6 +139,7 @@ export function useRecipientForm() {
       
     } catch (error: any) {
       console.error("Error creating CoinJar:", error);
+      setError(error.message || "An unknown error occurred");
       toast({
         title: "Failed to create CoinJar",
         description: error.message || "An unknown error occurred",
@@ -145,6 +154,7 @@ export function useRecipientForm() {
     formData,
     isSubmitting,
     isLoading,
+    error,
     user,
     handleInputChange,
     handleSubmit
