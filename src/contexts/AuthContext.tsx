@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -84,26 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
-      // First check if a user with this email already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-      
-      if (checkError) {
-        console.error("Error checking existing user:", checkError);
-      }
-      
-      if (existingUsers) {
-        toast({
-          title: "Sign up failed",
-          description: "An account with this email already exists.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Remove the check for existing user since profiles table doesn't exist yet
+      // We'll rely on Supabase's built-in uniqueness check for email
       
       const { error, data } = await supabase.auth.signUp({
         email,
