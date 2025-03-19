@@ -1,8 +1,11 @@
 
 import { useRecipientForm } from "@/hooks/useRecipientForm";
 import RecipientForm from "@/components/recipient/RecipientForm";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
-const RecipientProfile = () => {
+const EditRecipient = () => {
   const { 
     formData, 
     isSubmitting, 
@@ -31,6 +34,14 @@ const RecipientProfile = () => {
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto max-w-md">
+        <div className="mb-6">
+          <Link to="/dashboard">
+            <Button variant="ghost" className="pl-0">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
         <RecipientForm
           formData={formData}
           onChange={handleInputChange}
@@ -44,4 +55,4 @@ const RecipientProfile = () => {
   );
 };
 
-export default RecipientProfile;
+export default EditRecipient;

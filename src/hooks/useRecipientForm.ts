@@ -1,8 +1,9 @@
+
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 export type RecipientFormData = {
   name: string;
@@ -19,27 +20,74 @@ export function useRecipientForm() {
     email: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = Boolean(id);
 
+  // Load existing CoinJar data if in edit mode
   useEffect(() => {
-    const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
-    if (savedFormData) {
+    async function fetchCoinJarData() {
+      if (!id || !user) return;
+      
       try {
-        const parsedData = JSON.parse(savedFormData);
-        setFormData(parsedData);
-        localStorage.removeItem(FORM_STORAGE_KEY);
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('recipient_coinjar')
+          .select('name, relationship, email')
+          .eq('id', id)
+          .eq('creator_id', user.id)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching CoinJar:", error);
+          toast({
+            title: "Error",
+            description: "Could not load the CoinJar details.",
+            variant: "destructive",
+          });
+          navigate("/dashboard");
+          return;
+        }
+        
+        if (data) {
+          setFormData({
+            name: data.name || "",
+            relationship: data.relationship || "",
+            email: data.email || ""
+          });
+        }
       } catch (error) {
-        console.error("Error parsing saved form data:", error);
+        console.error("Error:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, []);
+
+    // Load from localStorage first for non-edit mode
+    if (!isEditMode) {
+      const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
+      if (savedFormData) {
+        try {
+          const parsedData = JSON.parse(savedFormData);
+          setFormData(parsedData);
+          localStorage.removeItem(FORM_STORAGE_KEY);
+        } catch (error) {
+          console.error("Error parsing saved form data:", error);
+        }
+      }
+      setIsLoading(false);
+    } else {
+      fetchCoinJarData();
+    }
+  }, [id, user, navigate, toast, isEditMode]);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!authLoading && !user) {
       if (formData.name || formData.relationship || formData.email) {
         localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
         
@@ -53,7 +101,7 @@ export function useRecipientForm() {
         state: { returnTo: location.pathname }
       });
     }
-  }, [user, isLoading, navigate, formData, location.pathname, toast]);
+  }, [user, authLoading, navigate, formData, location.pathname, toast]);
 
   const handleInputChange = (field: keyof RecipientFormData, value: string) => {
     setFormData(prev => ({
@@ -94,43 +142,69 @@ export function useRecipientForm() {
       setIsSubmitting(true);
       setError(null);
       
-      console.log("Creating CoinJar with user ID:", user.id);
-      
-      const { data, error: insertError } = await supabase
-        .from('recipient_coinjar')
-        .insert({
-          creator_id: user.id,
-          name: formData.name,
-          relationship: formData.relationship,
-          email: formData.email || null,
-        })
-        .select('id')
-        .single();
-      
-      if (insertError) {
-        console.error("Insert error details:", insertError);
+      if (isEditMode && id) {
+        // Update existing CoinJar
+        console.log("Updating CoinJar with ID:", id);
         
-        console.log("Using create_coinjar function approach...");
-        
-        const { data: jarData, error: funcError } = await supabase
-          .rpc('create_coinjar', { 
-            p_name: formData.name,
-            p_relationship: formData.relationship,
-            p_email: formData.email || null
-          });
+        const { error: updateError } = await supabase
+          .from('recipient_coinjar')
+          .update({
+            name: formData.name,
+            relationship: formData.relationship,
+            email: formData.email || null,
+          })
+          .eq('id', id)
+          .eq('creator_id', user.id);
           
-        if (funcError) {
-          console.error("Function creation error:", funcError);
-          throw funcError;
+        if (updateError) {
+          console.error("Update error:", updateError);
+          throw updateError;
         }
         
-        console.log("Successfully created coinjar via RPC:", jarData);
+        toast({
+          title: "CoinJar updated",
+          description: `CoinJar for ${formData.name} has been updated successfully`,
+        });
+      } else {
+        // Create new CoinJar
+        console.log("Creating CoinJar with user ID:", user.id);
+        
+        const { data, error: insertError } = await supabase
+          .from('recipient_coinjar')
+          .insert({
+            creator_id: user.id,
+            name: formData.name,
+            relationship: formData.relationship,
+            email: formData.email || null,
+          })
+          .select('id')
+          .single();
+        
+        if (insertError) {
+          console.error("Insert error details:", insertError);
+          
+          console.log("Using create_coinjar function approach...");
+          
+          const { data: jarData, error: funcError } = await supabase
+            .rpc('create_coinjar', { 
+              p_name: formData.name,
+              p_relationship: formData.relationship,
+              p_email: formData.email || null
+            });
+            
+          if (funcError) {
+            console.error("Function creation error:", funcError);
+            throw funcError;
+          }
+          
+          console.log("Successfully created coinjar via RPC:", jarData);
+        }
+        
+        toast({
+          title: "CoinJar created",
+          description: `CoinJar for ${formData.name} has been created successfully`,
+        });
       }
-      
-      toast({
-        title: "CoinJar created",
-        description: `CoinJar for ${formData.name} has been created successfully`,
-      });
       
       setFormData({
         name: "",
@@ -141,10 +215,10 @@ export function useRecipientForm() {
       navigate("/dashboard");
       
     } catch (error: any) {
-      console.error("Error creating CoinJar:", error);
+      console.error("Error creating/updating CoinJar:", error);
       setError(error.message || "An unknown error occurred");
       toast({
-        title: "Failed to create CoinJar",
+        title: isEditMode ? "Failed to update CoinJar" : "Failed to create CoinJar",
         description: error.message || "An unknown error occurred",
         variant: "destructive",
       });
@@ -156,9 +230,10 @@ export function useRecipientForm() {
   return {
     formData,
     isSubmitting,
-    isLoading,
+    isLoading: isLoading || authLoading,
     error,
     user,
+    isEditMode,
     handleInputChange,
     handleSubmit
   };

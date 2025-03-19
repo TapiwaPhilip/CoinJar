@@ -1,41 +1,31 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { ArrowUpRight, Clock, DollarSign, Edit } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getStatusIcon, getStatusText } from "./DashboardUtils";
+import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
+import { getStatusIcon } from "./DashboardUtils";
+import { CoinJar } from "@/types/dashboard";
 
 interface CoinJarCardProps {
-  jar: {
-    id: string;
-    name: string;
-    relationship: string;
-    total_amount: number;
-    target_amount: number;
-    percent_complete: number;
-    delivery_status: string;
-    created_at?: string;
-    coinjar_contributions?: Array<{ amount: number }>;  // Updated to number
-  };
-  showContribute?: boolean;
+  jar: CoinJar;
 }
 
-export const CoinJarCard = ({ jar, showContribute = false }: CoinJarCardProps) => {
+export const CoinJarCard = ({ jar }: CoinJarCardProps) => {
   return (
-    <Card key={jar.id} className="glass-card hover:shadow-lg transition-all">
-      <CardHeader>
-        <div className="flex justify-between items-start">
+    <Card className="h-full glass-card">
+      <CardContent className="p-6">
+        <div className="flex justify-between mb-3">
           <div>
-            <CardTitle className="text-xl">{jar.name}</CardTitle>
-            <CardDescription>{jar.relationship}</CardDescription>
+            <h3 className="text-lg font-medium">{jar.name}</h3>
+            <p className="text-sm text-muted-foreground">{jar.relationship}</p>
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1 text-sm bg-muted/50 px-2 py-1 rounded-full h-fit">
             {getStatusIcon(jar.delivery_status)}
-            <span>{getStatusText(jar.delivery_status)}</span>
+            <span className="sr-only md:not-sr-only md:inline">{jar.delivery_status}</span>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+        
         <div className="mb-4">
           <div className="flex justify-between mb-1">
             <span className="text-sm font-medium">Progress</span>
@@ -46,26 +36,36 @@ export const CoinJarCard = ({ jar, showContribute = false }: CoinJarCardProps) =
           <Progress value={jar.percent_complete} className="h-2" />
         </div>
         
-        {jar.created_at && jar.coinjar_contributions && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-muted-foreground">Created</p>
-              <p className="font-medium">
-                {new Date(jar.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Contributions</p>
-              <p className="font-medium">{jar.coinjar_contributions.length}</p>
+              <p className="text-xs text-muted-foreground">Created</p>
+              <p className="text-sm font-medium">{new Date(jar.created_at).toLocaleDateString()}</p>
             </div>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-xs text-muted-foreground">Contributions</p>
+              <p className="text-sm font-medium">{jar.coinjar_contributions?.length || 0}</p>
+            </div>
+          </div>
+        </div>
       </CardContent>
-      <CardFooter className={showContribute ? "flex gap-3" : ""}>
-        <Link to={`/coinjar/${jar.id}`} className="w-full">
-          <Button variant="outline" className="w-full">View Details</Button>
+      
+      <CardFooter className="p-6 pt-0 flex gap-2">
+        <Link to={`/coinjar/${jar.id}`} className="flex-1">
+          <Button variant="outline" className="w-full">
+            View Details
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Button>
         </Link>
-        {showContribute && <Button className="w-full">Contribute</Button>}
+        <Link to={`/edit-recipient/${jar.id}`}>
+          <Button variant="ghost" size="icon">
+            <Edit className="h-4 w-4" />
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

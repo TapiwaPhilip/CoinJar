@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Clock, CheckCircle2, AlertCircle, Users, DollarSign, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, AlertCircle, Users, DollarSign, Calendar, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusIcon, getStatusText } from "./DashboardUtils";
 import { CoinJar } from "@/types/dashboard";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CoinJarDetail = () => {
   const [jar, setJar] = useState<CoinJar | null>(null);
@@ -18,6 +19,7 @@ const CoinJarDetail = () => {
   const [contributors, setContributors] = useState<any[]>([]);
   const { id } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchJarDetails = async () => {
@@ -132,6 +134,9 @@ const CoinJarDetail = () => {
     );
   }
 
+  // Check if the current user is the creator of the jar
+  const isCreator = user && jar && user.id === jar.creator_id;
+
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto max-w-4xl">
@@ -152,9 +157,19 @@ const CoinJarDetail = () => {
                 <CardTitle className="text-2xl md:text-3xl">{jar.name}</CardTitle>
                 <CardDescription className="text-lg">{jar.relationship}</CardDescription>
               </div>
-              <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
-                {getStatusIcon(jar.delivery_status)}
-                <span>{getStatusText(jar.delivery_status)}</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
+                  {getStatusIcon(jar.delivery_status)}
+                  <span>{getStatusText(jar.delivery_status)}</span>
+                </div>
+                {isCreator && (
+                  <Link to={`/edit-recipient/${jar.id}`}>
+                    <Button variant="ghost" size="sm" className="gap-1">
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </CardHeader>

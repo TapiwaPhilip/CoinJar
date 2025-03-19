@@ -18,6 +18,7 @@ interface RecipientFormProps {
   onChange: (field: keyof RecipientFormData, value: string) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   isSubmitting: boolean;
+  isEditMode?: boolean;
   error?: string | null;
 }
 
@@ -26,12 +27,15 @@ const RecipientForm = ({
   onChange, 
   onSubmit, 
   isSubmitting,
+  isEditMode = false,
   error
 }: RecipientFormProps) => {
   return (
     <Card className="p-6 glass-card">
       <CardHeader className="p-0 pb-6">
-        <CardTitle className="text-2xl font-semibold">Create Recipient CoinJar</CardTitle>
+        <CardTitle className="text-2xl font-semibold">
+          {isEditMode ? "Edit CoinJar" : "Create Recipient CoinJar"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {error && (
@@ -76,11 +80,15 @@ const RecipientForm = ({
             className="w-full" 
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Creating..." : "Create CoinJar"}
+            {isSubmitting 
+              ? (isEditMode ? "Updating..." : "Creating...") 
+              : (isEditMode ? "Update CoinJar" : "Create CoinJar")}
           </Button>
-          <p className="text-center text-sm text-muted-foreground mt-2">
-            Once created, you'll be able to invite others to view or contribute to this CoinJar.
-          </p>
+          {!isEditMode && (
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Once created, you'll be able to invite others to view or contribute to this CoinJar.
+            </p>
+          )}
         </form>
       </CardContent>
     </Card>

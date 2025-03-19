@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import RecipientProfile from "./pages/RecipientProfile";
+import EditRecipient from "./pages/EditRecipient";
 import Contributions from "./pages/Contributions";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/recipient-profile" element={<RecipientProfile />} />
+            <Route path="/edit-recipient/:id" element={<EditRecipient />} />
             <Route path="/contributions" element={<Contributions />} />
             <Route path="/coinjar/:id" element={<CoinJarDetail />} />
             <Route path="/auth" element={<Auth />} />
