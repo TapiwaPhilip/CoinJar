@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +62,7 @@ const Dashboard = () => {
             total_amount: totalAmount,
             delivery_status: randomStatus,
             target_amount: targetAmount,
-            percent_complete: percentComplete // This is a number, which is what Progress expects
+            percent_complete: percentComplete // This is a number now, which matches the updated Progress component
           };
         });
         
@@ -397,3 +396,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
