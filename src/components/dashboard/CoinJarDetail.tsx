@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,23 @@ const CoinJarDetail = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) {
+      // If user is not authenticated, redirect to auth page
+      navigate("/auth");
+      return;
+    }
+
     const fetchJarDetails = async () => {
       if (!id) return;
       
       try {
         setLoading(true);
+        
+        console.log("Fetching CoinJar with ID:", id);
+        console.log("Current user ID:", user?.id);
         
         // Fetch CoinJar details without including the coinjar_invitations
         // which was causing the recursive policy issue
@@ -45,9 +55,21 @@ const CoinJarDetail = () => {
             coinjar_contributions(amount)
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle();
           
-        if (jarError) throw jarError;
+        if (jarError) {
+          console.error('Error fetching jar details:', jarError);
+          throw jarError;
+        }
+        
+        if (!jarData) {
+          console.log("No jar data found for ID:", id);
+          setJar(null);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Retrieved jar data:", jarData);
         
         // Calculate totals
         const totalAmount = jarData.coinjar_contributions.reduce(
@@ -83,7 +105,8 @@ const CoinJarDetail = () => {
         
         setJar(processedJar);
         
-        // Mock contributors for demo - replace with real data in production
+        // Fetch real contributors from the database if available
+        // For now, using mock data
         setContributors([
           { id: 1, name: "Jane Smith", amount: 25, date: new Date().toISOString() },
           { id: 2, name: "John Doe", amount: 50, date: new Date(Date.now() - 86400000).toISOString() }
@@ -102,7 +125,7 @@ const CoinJarDetail = () => {
     };
     
     fetchJarDetails();
-  }, [id, toast]);
+  }, [id, toast, user, navigate]);
   
   if (loading) {
     return <CoinJarDetailSkeleton />;

@@ -18,6 +18,8 @@ export const useDashboardData = (userId: string | undefined) => {
       try {
         setLoading(true);
         
+        console.log("Fetching CoinJars for user ID:", userId);
+        
         // Fetch CoinJars created by the user with basic error handling
         const { data: createdJars, error: createdJarsError } = await supabase
           .from('recipient_coinjar')
@@ -43,7 +45,9 @@ export const useDashboardData = (userId: string | undefined) => {
           return;
         }
         
-        if (!createdJars) {
+        console.log("Retrieved jars:", createdJars);
+        
+        if (!createdJars || createdJars.length === 0) {
           console.log("No jars found, setting empty array");
           setMyJars([]);
         } else {
