@@ -45,8 +45,9 @@ const Dashboard = () => {
         
         // Calculate total contributions for each jar
         const jarsWithTotals = createdJars.map(jar => {
+          // Convert amount to number before summing them
           const totalAmount = jar.coinjar_contributions.reduce(
-            (sum, contribution) => sum + parseFloat(contribution.amount), 
+            (sum, contribution) => sum + (typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount), 
             0
           );
           
@@ -64,9 +65,9 @@ const Dashboard = () => {
             delivery_status: randomStatus,
             target_amount: targetAmount,
             percent_complete: percentComplete,
-            // Convert contribution amounts to numbers
+            // Convert contribution amounts to numbers if they are strings
             coinjar_contributions: jar.coinjar_contributions.map(contribution => ({
-              amount: parseFloat(contribution.amount)
+              amount: typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount
             }))
           };
         });

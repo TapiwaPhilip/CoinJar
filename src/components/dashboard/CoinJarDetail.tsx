@@ -44,7 +44,13 @@ const CoinJarDetail = () => {
         
         // Calculate totals
         const totalAmount = jarData.coinjar_contributions.reduce(
-          (sum, contribution) => sum + parseFloat(contribution.amount), 
+          (sum, contribution) => {
+            // Handle both string and number types for amount
+            const amount = typeof contribution.amount === 'string' 
+              ? parseFloat(contribution.amount) 
+              : contribution.amount;
+            return sum + amount;
+          }, 
           0
         );
         
@@ -64,7 +70,7 @@ const CoinJarDetail = () => {
           percent_complete: percentComplete,
           // Convert contribution amounts to numbers
           coinjar_contributions: jarData.coinjar_contributions.map(contribution => ({
-            amount: parseFloat(contribution.amount)
+            amount: typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount
           }))
         };
         
