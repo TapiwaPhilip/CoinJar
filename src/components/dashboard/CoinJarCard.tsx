@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { getStatusIcon, getStatusText } from "./DashboardUtils";
+import { Link } from "react-router-dom";
 
 interface CoinJarCardProps {
   jar: {
@@ -61,7 +62,9 @@ export const CoinJarCard = ({ jar, showContribute = false }: CoinJarCardProps) =
         )}
       </CardContent>
       <CardFooter className={showContribute ? "flex gap-3" : ""}>
-        <Button variant="outline" className="w-full">View Details</Button>
+        <Link to={`/coinjar/${jar.id}`} className="w-full">
+          <Button variant="outline" className="w-full">View Details</Button>
+        </Link>
         {showContribute && <Button className="w-full">Contribute</Button>}
       </CardFooter>
     </Card>

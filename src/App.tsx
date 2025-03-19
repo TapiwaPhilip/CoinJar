@@ -11,6 +11,7 @@ import Contributions from "./pages/Contributions";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./contexts/AuthContext";
+import CoinJarDetail from "./components/dashboard/CoinJarDetail";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/recipient-profile" element={<RecipientProfile />} />
             <Route path="/contributions" element={<Contributions />} />
+            <Route path="/coinjar/:id" element={<CoinJarDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
