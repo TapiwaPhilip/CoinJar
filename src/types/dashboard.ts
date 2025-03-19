@@ -9,7 +9,7 @@ export interface CoinJar {
   target_amount: number;
   percent_complete: number;
   delivery_status: 'pending' | 'processing' | 'delivered';
-  coinjar_contributions: Array<{ amount: string }>;
+  coinjar_contributions: Array<{ amount: number }>; // Changed from string to number
 }
 
 export interface InvitedJar {

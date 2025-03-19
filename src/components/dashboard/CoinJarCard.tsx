@@ -15,7 +15,7 @@ interface CoinJarCardProps {
     percent_complete: number;
     delivery_status: string;
     created_at?: string;
-    coinjar_contributions?: Array<{ amount: string }>;
+    coinjar_contributions?: Array<{ amount: number }>;  // Updated to number
   };
   showContribute?: boolean;
 }

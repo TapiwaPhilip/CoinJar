@@ -63,7 +63,11 @@ const Dashboard = () => {
             total_amount: totalAmount,
             delivery_status: randomStatus,
             target_amount: targetAmount,
-            percent_complete: percentComplete
+            percent_complete: percentComplete,
+            // Convert contribution amounts to numbers
+            coinjar_contributions: jar.coinjar_contributions.map(contribution => ({
+              amount: parseFloat(contribution.amount)
+            }))
           };
         });
         

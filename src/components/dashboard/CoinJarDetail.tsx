@@ -50,20 +50,25 @@ const CoinJarDetail = () => {
         
         // Mock data for demo - in production, this would come from the database
         const deliveryStatuses = ['pending', 'processing', 'delivered'];
-        const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
+        const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)] as 'pending' | 'processing' | 'delivered';
         
         const targetAmount = 100; // Example target, replace with real target from DB
         const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
         
-        const jarWithDetails = {
+        // Create a new object with the correct types
+        const processedJar: CoinJar = {
           ...jarData,
           total_amount: totalAmount,
           delivery_status: randomStatus,
           target_amount: targetAmount,
-          percent_complete: percentComplete
+          percent_complete: percentComplete,
+          // Convert contribution amounts to numbers
+          coinjar_contributions: jarData.coinjar_contributions.map(contribution => ({
+            amount: parseFloat(contribution.amount)
+          }))
         };
         
-        setJar(jarWithDetails as CoinJar);
+        setJar(processedJar);
         
         // Mock contributors for demo - replace with real data in production
         setContributors([
