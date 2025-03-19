@@ -9,17 +9,12 @@ export interface CoinJar {
   target_amount: number;
   percent_complete: number;
   delivery_status: 'pending' | 'processing' | 'delivered';
-  coinjar_contributions: Array<{ amount: number }>; // Changed from string to number
+  coinjar_contributions: Array<{ amount: number }>;
+  creator_id?: string; // Added this field
 }
 
-export interface InvitedJar {
-  id: string;
-  name: string;
-  relationship: string;
-  total_amount: number;
-  target_amount: number;
-  percent_complete: number;
-  delivery_status: string;
+export interface InvitedJar extends CoinJar {
+  // InvitedJar extends CoinJar to avoid type errors
 }
 
 export interface Notification {

@@ -9,9 +9,10 @@ import { CoinJar } from "@/types/dashboard";
 
 interface CoinJarCardProps {
   jar: CoinJar;
+  showContribute?: boolean;
 }
 
-export const CoinJarCard = ({ jar }: CoinJarCardProps) => {
+export const CoinJarCard = ({ jar, showContribute = false }: CoinJarCardProps) => {
   return (
     <Card className="h-full glass-card">
       <CardContent className="p-6">
@@ -55,17 +56,25 @@ export const CoinJarCard = ({ jar }: CoinJarCardProps) => {
       </CardContent>
       
       <CardFooter className="p-6 pt-0 flex gap-2">
-        <Link to={`/coinjar/${jar.id}`} className="flex-1">
+        {showContribute ? (
           <Button variant="outline" className="w-full">
-            View Details
-            <ArrowUpRight className="ml-2 h-4 w-4" />
+            Contribute
           </Button>
-        </Link>
-        <Link to={`/edit-recipient/${jar.id}`}>
-          <Button variant="ghost" size="icon">
-            <Edit className="h-4 w-4" />
-          </Button>
-        </Link>
+        ) : (
+          <>
+            <Link to={`/coinjar/${jar.id}`} className="flex-1">
+              <Button variant="outline" className="w-full">
+                View Details
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to={`/edit-recipient/${jar.id}`}>
+              <Button variant="ghost" size="icon">
+                <Edit className="h-4 w-4" />
+              </Button>
+            </Link>
+          </>
+        )}
       </CardFooter>
     </Card>
   );

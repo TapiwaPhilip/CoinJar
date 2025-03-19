@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +36,7 @@ const CoinJarDetail = () => {
             relationship, 
             email, 
             created_at,
+            creator_id,
             coinjar_contributions(amount)
           `)
           .eq('id', id)
