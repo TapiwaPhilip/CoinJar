@@ -105,6 +105,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_coinjar: {
+        Args: {
+          p_name: string
+          p_relationship: string
+          p_email?: string
+        }
+        Returns: string
+      }
       get_auth_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string

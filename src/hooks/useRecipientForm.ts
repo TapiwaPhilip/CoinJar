@@ -1,4 +1,3 @@
-
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,14 +25,12 @@ export function useRecipientForm() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load saved form data from localStorage on initial render
   useEffect(() => {
     const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
     if (savedFormData) {
       try {
         const parsedData = JSON.parse(savedFormData);
         setFormData(parsedData);
-        // Clear the saved data once retrieved
         localStorage.removeItem(FORM_STORAGE_KEY);
       } catch (error) {
         console.error("Error parsing saved form data:", error);
@@ -41,11 +38,8 @@ export function useRecipientForm() {
     }
   }, []);
 
-  // Check authentication status after the auth state is loaded
   useEffect(() => {
-    // Only redirect if auth state is loaded (not in loading state) and user is not authenticated
     if (!isLoading && !user) {
-      // Save current form data to localStorage before redirecting
       if (formData.name || formData.relationship || formData.email) {
         localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
         
@@ -55,7 +49,6 @@ export function useRecipientForm() {
         });
       }
       
-      // Redirect to auth page with return URL
       navigate("/auth", { 
         state: { returnTo: location.pathname }
       });
@@ -67,7 +60,6 @@ export function useRecipientForm() {
       ...prev,
       [field]: value
     }));
-    // Clear any error when user starts typing
     if (error) setError(null);
   };
 
@@ -81,7 +73,6 @@ export function useRecipientForm() {
         variant: "destructive",
       });
       
-      // Save form data before redirect
       localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
       navigate("/auth", { 
         state: { returnTo: location.pathname }
@@ -105,7 +96,6 @@ export function useRecipientForm() {
       
       console.log("Creating CoinJar with user ID:", user.id);
       
-      // Insert directly without RLS by using the service_role key
       const { data, error: insertError } = await supabase
         .from('recipient_coinjar')
         .insert({
@@ -120,27 +110,21 @@ export function useRecipientForm() {
       if (insertError) {
         console.error("Insert error details:", insertError);
         
-        // Try a direct SQL approach as a backup if the insert failed
-        if (insertError.code === '42P17') {
-          console.log("Using direct insert approach...");
+        console.log("Using create_coinjar function approach...");
+        
+        const { data: jarData, error: funcError } = await supabase
+          .rpc('create_coinjar', { 
+            p_name: formData.name,
+            p_relationship: formData.relationship,
+            p_email: formData.email || null
+          });
           
-          // Create a dummy CoinJar for testing purposes
-          const { data: dummyJar, error: dummyError } = await supabase
-            .rpc('create_coinjar', { 
-              p_name: formData.name,
-              p_relationship: formData.relationship,
-              p_email: formData.email || null
-            });
-            
-          if (dummyError) {
-            console.error("Dummy creation error:", dummyError);
-            throw dummyError;
-          }
-          
-          console.log("Successfully created coinjar via RPC:", dummyJar);
-        } else {
-          throw insertError;
+        if (funcError) {
+          console.error("Function creation error:", funcError);
+          throw funcError;
         }
+        
+        console.log("Successfully created coinjar via RPC:", jarData);
       }
       
       toast({
@@ -148,14 +132,12 @@ export function useRecipientForm() {
         description: `CoinJar for ${formData.name} has been created successfully`,
       });
       
-      // Reset form
       setFormData({
         name: "",
         relationship: "",
         email: "",
       });
 
-      // Navigate to dashboard or another appropriate page
       navigate("/dashboard");
       
     } catch (error: any) {
