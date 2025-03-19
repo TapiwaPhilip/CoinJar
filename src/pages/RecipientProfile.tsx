@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PlusCircle } from "lucide-react";
+
+const FORM_STORAGE_KEY = "coinjar_recipient_form_data";
 
 const RecipientProfile = () => {
   const [formData, setFormData] = useState({
@@ -20,9 +22,46 @@ const RecipientProfile = () => {
   const [inviteEmail, setInviteEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Load saved form data from localStorage on initial render
+  useEffect(() => {
+    const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        setFormData(parsedData);
+        // Clear the saved data once retrieved
+        localStorage.removeItem(FORM_STORAGE_KEY);
+      } catch (error) {
+        console.error("Error parsing saved form data:", error);
+      }
+    }
+  }, []);
+
+  // Check authentication status after the auth state is loaded
+  useEffect(() => {
+    // Only redirect if auth state is loaded (not in loading state) and user is not authenticated
+    if (!isLoading && !user) {
+      // Save current form data to localStorage before redirecting
+      if (formData.name || formData.relationship || formData.email) {
+        localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
+        
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to create a CoinJar. Your information will be saved.",
+        });
+      }
+      
+      // Redirect to auth page with return URL
+      navigate("/auth", { 
+        state: { returnTo: location.pathname }
+      });
+    }
+  }, [user, isLoading, navigate, formData, location.pathname, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +71,12 @@ const RecipientProfile = () => {
         title: "Authentication required",
         description: "Please sign in to create a CoinJar",
         variant: "destructive",
+      });
+      
+      // Save form data before redirect
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
+      navigate("/auth", { 
+        state: { returnTo: location.pathname }
       });
       return;
     }
@@ -90,6 +135,20 @@ const RecipientProfile = () => {
       setIsSubmitting(false);
     }
   };
+
+  // If still loading auth state or not authenticated, show a loading state or nothing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Only render the form if the user is authenticated
+  if (!user) {
+    return null; // This will prevent the form from flashing before redirect
+  }
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">

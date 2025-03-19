@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,13 +18,15 @@ const Auth = () => {
   const [error, setError] = useState("");
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Redirect if already authenticated
+  const returnTo = location.state?.returnTo || "/dashboard";
+
   useEffect(() => {
     if (user && !isLoading) {
-      navigate("/dashboard");
+      navigate(returnTo);
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, returnTo]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +98,9 @@ const Auth = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Welcome</CardTitle>
             <CardDescription className="text-center">
-              Sign in to your account or create a new one
+              {returnTo === "/recipient-profile" ? 
+                "Sign in to continue creating your CoinJar" : 
+                "Sign in to your account or create a new one"}
             </CardDescription>
           </CardHeader>
           <CardContent>
