@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PlusCircle } from "lucide-react";
 
 const RecipientProfile = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +17,9 @@ const RecipientProfile = () => {
     relationship: "",
     email: ""
   });
+  const [inviteEmail, setInviteEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -44,14 +48,17 @@ const RecipientProfile = () => {
     try {
       setIsSubmitting(true);
       
-      const { error } = await supabase
+      // Insert the CoinJar and get the generated ID
+      const { data, error } = await supabase
         .from('recipient_coinjar')
         .insert({
           creator_id: user.id,
           name: formData.name,
           relationship: formData.relationship,
           email: formData.email || null,
-        });
+        })
+        .select('id')
+        .single();
       
       if (error) {
         throw error;
@@ -84,39 +91,64 @@ const RecipientProfile = () => {
     }
   };
 
-  return <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
+  return (
+    <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto max-w-md">
         <Card className="p-6 glass-card">
           <h2 className="text-2xl font-semibold mb-6">Create Recipient CoinJar</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Recipient Name</Label>
-              <Input id="name" value={formData.name} onChange={e => setFormData({
-              ...formData,
-              name: e.target.value
-            })} placeholder="e.g., Grandma Didi" />
+              <Input 
+                id="name" 
+                value={formData.name} 
+                onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} 
+                placeholder="e.g., Grandma Didi" 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="relationship">Relationship</Label>
-              <Input id="relationship" value={formData.relationship} onChange={e => setFormData({
-              ...formData,
-              relationship: e.target.value
-            })} placeholder="e.g., Grandmother" />
+              <Input 
+                id="relationship" 
+                value={formData.relationship} 
+                onChange={e => setFormData({
+                  ...formData,
+                  relationship: e.target.value
+                })} 
+                placeholder="e.g., Grandmother" 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email (Optional)</Label>
-              <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
-              ...formData,
-              email: e.target.value
-            })} placeholder="recipient@example.com" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={formData.email} 
+                onChange={e => setFormData({
+                  ...formData,
+                  email: e.target.value
+                })} 
+                placeholder="recipient@example.com" 
+              />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Creating..." : "Create CoinJar"}
             </Button>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Once created, you'll be able to invite others to view or contribute to this CoinJar.
+            </p>
           </form>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default RecipientProfile;

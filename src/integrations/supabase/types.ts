@@ -9,6 +9,70 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      coinjar_contributions: {
+        Row: {
+          amount: number
+          coinjar_id: string
+          contributor_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          amount: number
+          coinjar_id: string
+          contributor_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          coinjar_id?: string
+          contributor_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coinjar_contributions_coinjar_id_fkey"
+            columns: ["coinjar_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_coinjar"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coinjar_invitations: {
+        Row: {
+          accepted: boolean | null
+          coinjar_id: string
+          created_at: string
+          id: string
+          invited_user_id: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          coinjar_id: string
+          created_at?: string
+          id?: string
+          invited_user_id: string
+        }
+        Update: {
+          accepted?: boolean | null
+          coinjar_id?: string
+          created_at?: string
+          id?: string
+          invited_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coinjar_invitations_coinjar_id_fkey"
+            columns: ["coinjar_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_coinjar"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipient_coinjar: {
         Row: {
           created_at: string
