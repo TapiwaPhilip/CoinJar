@@ -1,8 +1,13 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const RecipientProfile = () => {
   const [formData, setFormData] = useState({
@@ -10,10 +15,73 @@ const RecipientProfile = () => {
     relationship: "",
     email: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission in future implementation
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a CoinJar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.name || !formData.relationship) {
+      toast({
+        title: "Missing information",
+        description: "Please provide both a name and relationship",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const { error } = await supabase
+        .from('recipient_coinjar')
+        .insert({
+          creator_id: user.id,
+          name: formData.name,
+          relationship: formData.relationship,
+          email: formData.email || null,
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "CoinJar created",
+        description: `CoinJar for ${formData.name} has been created successfully`,
+      });
+      
+      // Reset form
+      setFormData({
+        name: "",
+        relationship: "",
+        email: "",
+      });
+
+      // Navigate to dashboard or another appropriate page
+      navigate("/dashboard");
+      
+    } catch (error: any) {
+      console.error("Error creating CoinJar:", error);
+      toast({
+        title: "Failed to create CoinJar",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
@@ -42,8 +110,8 @@ const RecipientProfile = () => {
               email: e.target.value
             })} placeholder="recipient@example.com" />
             </div>
-            <Button type="submit" className="w-full">
-              Create CoinJar
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create CoinJar"}
             </Button>
           </form>
         </Card>
