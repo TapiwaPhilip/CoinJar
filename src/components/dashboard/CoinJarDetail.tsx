@@ -41,8 +41,7 @@ const CoinJarDetail = () => {
         console.log("Fetching CoinJar with ID:", id);
         console.log("Current user ID:", user?.id);
         
-        // Fetch CoinJar details without including the coinjar_invitations
-        // which was causing the recursive policy issue
+        // Fetch basic CoinJar details without nesting relations
         const { data: jarData, error: jarError } = await supabase
           .from('recipient_coinjar')
           .select(`
@@ -51,8 +50,7 @@ const CoinJarDetail = () => {
             relationship, 
             email, 
             created_at,
-            creator_id,
-            coinjar_contributions(amount)
+            creator_id
           `)
           .eq('id', id)
           .maybeSingle();
@@ -71,17 +69,27 @@ const CoinJarDetail = () => {
         
         console.log("Retrieved jar data:", jarData);
         
+        // Fetch contributions separately
+        const { data: contributions, error: contribError } = await supabase
+          .from('coinjar_contributions')
+          .select('amount')
+          .eq('coinjar_id', id);
+          
+        if (contribError) {
+          console.error('Error fetching contributions:', contribError);
+        }
+        
         // Calculate totals
-        const totalAmount = jarData.coinjar_contributions.reduce(
+        const totalAmount = contributions ? contributions.reduce(
           (sum, contribution) => {
             // Handle both string and number types for amount
             const amount = typeof contribution.amount === 'string' 
               ? parseFloat(contribution.amount) 
               : contribution.amount;
-            return sum + amount;
+            return sum + (isNaN(amount) ? 0 : amount);
           }, 
           0
-        );
+        ) : 0;
         
         // Mock data for demo - in production, this would come from the database
         const deliveryStatuses = ['pending', 'processing', 'delivered'];
@@ -98,9 +106,9 @@ const CoinJarDetail = () => {
           target_amount: targetAmount,
           percent_complete: percentComplete,
           // Convert contribution amounts to numbers
-          coinjar_contributions: jarData.coinjar_contributions.map(contribution => ({
+          coinjar_contributions: contributions ? contributions.map(contribution => ({
             amount: typeof contribution.amount === 'string' ? parseFloat(contribution.amount) : contribution.amount
-          }))
+          })) : []
         };
         
         setJar(processedJar);

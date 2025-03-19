@@ -117,6 +117,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_coinjars: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      is_coinjar_owner: {
+        Args: {
+          jar_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

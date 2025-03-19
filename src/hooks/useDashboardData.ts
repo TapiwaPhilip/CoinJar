@@ -20,7 +20,8 @@ export const useDashboardData = (userId: string | undefined) => {
         
         console.log("Fetching CoinJars for user ID:", userId);
         
-        // Simplify the query to avoid recursion issues
+        // Fetch the created jars in a simple query 
+        // This avoids recursive policy issues by not requesting nested relations
         const { data: createdJars, error: createdJarsError } = await supabase
           .from('recipient_coinjar')
           .select(`
@@ -30,8 +31,7 @@ export const useDashboardData = (userId: string | undefined) => {
             email, 
             created_at,
             creator_id
-          `)
-          .eq('creator_id', userId);
+          `);
         
         if (createdJarsError) {
           console.error("Error fetching jars:", createdJarsError);
@@ -52,78 +52,96 @@ export const useDashboardData = (userId: string | undefined) => {
         } else {
           // Get contributions in a separate query to avoid recursion
           const jarsWithTotals = await Promise.all(createdJars.map(async (jar) => {
-            // Fetch contributions separately
-            const { data: contributions } = await supabase
-              .from('coinjar_contributions')
-              .select('amount')
-              .eq('coinjar_id', jar.id);
+            try {
+              // Fetch contributions separately
+              const { data: contributions } = await supabase
+                .from('coinjar_contributions')
+                .select('amount')
+                .eq('coinjar_id', jar.id);
+                
+              // Calculate total contributions
+              const totalAmount = contributions 
+                ? contributions.reduce((sum, contribution) => {
+                    const amount = typeof contribution.amount === 'string' 
+                      ? parseFloat(contribution.amount) 
+                      : contribution.amount;
+                    return sum + (isNaN(amount) ? 0 : amount);
+                  }, 0)
+                : 0;
               
-            // Calculate total contributions
-            const totalAmount = contributions 
-              ? contributions.reduce((sum, contribution) => {
-                  const amount = typeof contribution.amount === 'string' 
-                    ? parseFloat(contribution.amount) 
-                    : contribution.amount;
-                  return sum + (isNaN(amount) ? 0 : amount);
-                }, 0)
-              : 0;
-            
-            // Random delivery status for demo purposes - replace with real status in production
-            const deliveryStatuses = ['pending', 'processing', 'delivered'];
-            const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
-            
-            // Fix the type error by ensuring target_amount and percent_complete are numbers
-            const targetAmount = 100; // Example target, replace with real target from DB
-            const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
-            
-            return {
-              ...jar,
-              total_amount: totalAmount,
-              delivery_status: randomStatus as 'pending' | 'processing' | 'delivered',
-              target_amount: targetAmount,
-              percent_complete: percentComplete,
-              coinjar_contributions: contributions || []
-            } as CoinJar;
+              // Random delivery status for demo purposes - replace with real status in production
+              const deliveryStatuses = ['pending', 'processing', 'delivered'];
+              const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
+              
+              // Fix the type error by ensuring target_amount and percent_complete are numbers
+              const targetAmount = 100; // Example target, replace with real target from DB
+              const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
+              
+              return {
+                ...jar,
+                total_amount: totalAmount,
+                delivery_status: randomStatus as 'pending' | 'processing' | 'delivered',
+                target_amount: targetAmount,
+                percent_complete: percentComplete,
+                coinjar_contributions: contributions || []
+              } as CoinJar;
+            } catch (err) {
+              console.error(`Error processing jar ${jar.id}:`, err);
+              return {
+                ...jar,
+                total_amount: 0,
+                delivery_status: 'pending' as 'pending' | 'processing' | 'delivered',
+                target_amount: 100,
+                percent_complete: 0,
+                coinjar_contributions: []
+              } as CoinJar;
+            }
           }));
           
           setMyJars(jarsWithTotals);
         }
         
-        // Use a simplified query for invitations to avoid recursion
+        // Fetch invitations with a simple query
         try {
-          // Get only the IDs first
-          const { data: invitationIds, error: invitationIdsError } = await supabase
+          const { data: invitations, error: invitationsError } = await supabase
             .from('coinjar_invitations')
             .select('id, coinjar_id')
             .eq('invited_user_id', userId)
             .eq('accepted', false);
             
-          if (invitationIdsError) {
-            console.error('Error fetching invitation IDs:', invitationIdsError);
-          } else if (invitationIds && invitationIds.length > 0) {
+          if (invitationsError) {
+            console.error('Error fetching invitations:', invitationsError);
+            setInvitedJars([]);
+          } else if (invitations && invitations.length > 0) {
             // Then get the jar details separately for each invitation
-            const processedInvitations = await Promise.all(invitationIds.map(async (invitation) => {
-              const { data: jarData } = await supabase
-                .from('recipient_coinjar')
-                .select('id, name, relationship, created_at, creator_id')
-                .eq('id', invitation.coinjar_id)
-                .maybeSingle();
-                
-              return {
-                id: invitation.id,
-                name: jarData?.name || 'Unknown CoinJar',
-                relationship: jarData?.relationship || 'Unknown',
-                total_amount: 0, // Default values for invited jars
-                target_amount: 100,
-                percent_complete: 0,
-                delivery_status: 'pending',
-                created_at: jarData?.created_at || new Date().toISOString(),
-                coinjar_contributions: [],
-                creator_id: jarData?.creator_id
-              } as InvitedJar;
+            const processedInvitations = await Promise.all(invitations.map(async (invitation) => {
+              try {
+                const { data: jarData } = await supabase
+                  .from('recipient_coinjar')
+                  .select('id, name, relationship, created_at, creator_id')
+                  .eq('id', invitation.coinjar_id)
+                  .maybeSingle();
+                  
+                return {
+                  id: invitation.id,
+                  name: jarData?.name || 'Unknown CoinJar',
+                  relationship: jarData?.relationship || 'Unknown',
+                  total_amount: 0, // Default values for invited jars
+                  target_amount: 100,
+                  percent_complete: 0,
+                  delivery_status: 'pending',
+                  created_at: jarData?.created_at || new Date().toISOString(),
+                  coinjar_contributions: [],
+                  creator_id: jarData?.creator_id
+                } as InvitedJar;
+              } catch (err) {
+                console.error(`Error processing invitation ${invitation.id}:`, err);
+                return null;
+              }
             }));
             
-            setInvitedJars(processedInvitations);
+            // Filter out null values (failed fetches)
+            setInvitedJars(processedInvitations.filter(Boolean) as InvitedJar[]);
           } else {
             setInvitedJars([]);
           }
