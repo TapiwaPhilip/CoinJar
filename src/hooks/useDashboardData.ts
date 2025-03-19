@@ -39,9 +39,11 @@ export const useDashboardData = (userId: string | undefined) => {
         
         console.log("Retrieved basic jars data:", myJarsBasic);
         
+        let enhancedJars: CoinJar[] = [];
+
         // STEP 2: If we have jars, fetch their contributions separately
         if (myJarsBasic && myJarsBasic.length > 0) {
-          const enhancedJars = await Promise.all(myJarsBasic.map(async (jar) => {
+          enhancedJars = await Promise.all(myJarsBasic.map(async (jar) => {
             // Fetch contributions for this specific jar
             const { data: contributions, error: contribError } = await supabase
               .from('coinjar_contributions')
@@ -77,11 +79,29 @@ export const useDashboardData = (userId: string | undefined) => {
               coinjar_contributions: contributions || []
             } as CoinJar;
           }));
-          
-          setMyJars(enhancedJars);
         } else {
-          setMyJars([]);
+          // Create a dummy jar if no jars were found
+          const dummyJar: CoinJar = {
+            id: "dummy-jar-id",
+            name: "Birthday Gift for Mom",
+            relationship: "Mother",
+            created_at: new Date().toISOString(),
+            total_amount: 75,
+            target_amount: 150,
+            percent_complete: 50,
+            delivery_status: "processing",
+            coinjar_contributions: [
+              { amount: 50 },
+              { amount: 25 }
+            ],
+            creator_id: userId
+          };
+          
+          enhancedJars = [dummyJar];
+          console.log("No jars found, created dummy jar:", dummyJar);
         }
+        
+        setMyJars(enhancedJars);
         
         // STEP 3: Fetch invitations with a direct query
         const { data: invitations, error: invitationsError } = await supabase
@@ -138,12 +158,12 @@ export const useDashboardData = (userId: string | undefined) => {
           setInvitedJars([]);
         }
         
-        // STEP 4: Set mock notifications (replace with real data in production)
-        setNotifications([
+        // Create dummy notification
+        const dummyNotifications: Notification[] = [
           { 
             id: 1, 
             type: 'contribution', 
-            message: 'Someone contributed $25 to Grandma\'s Birthday', 
+            message: 'Someone contributed $25 to Birthday Gift for Mom', 
             created_at: new Date().toISOString(),
             read: false
           },
@@ -154,7 +174,10 @@ export const useDashboardData = (userId: string | undefined) => {
             created_at: new Date(Date.now() - 86400000).toISOString(),
             read: true
           }
-        ]);
+        ];
+        
+        setNotifications(dummyNotifications);
+        
       } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
         toast({
