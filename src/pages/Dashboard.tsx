@@ -74,19 +74,36 @@ const Dashboard = () => {
         
         setMyJars(jarsWithTotals);
         
-        // Fetch mock invitations (replace with real query)
-        // For demo purposes - replace with real invitation data in production
-        setInvitedJars([
-          {
-            id: 'mock-1',
-            name: 'Colleague\'s Birthday',
-            relationship: 'Work',
-            total_amount: 75,
-            target_amount: 150,
-            percent_complete: 50,
-            delivery_status: 'pending'
-          }
-        ]);
+        // Fetch real invitations now that we have proper RLS policies
+        const { data: invitations, error: invitationsError } = await supabase
+          .from('coinjar_invitations')
+          .select(`
+            id,
+            coinjar_id,
+            recipient_coinjar(id, name, relationship)
+          `)
+          .eq('invited_user_id', user.id)
+          .eq('accepted', false);
+        
+        if (invitationsError) {
+          console.error('Error fetching invitations:', invitationsError);
+          // Continue execution rather than throwing, to avoid blocking dashboard load
+        } else {
+          // Process invitations if we successfully fetched them
+          const processedInvitations = invitations?.map(invitation => {
+            return {
+              id: invitation.id,
+              name: invitation.recipient_coinjar?.name || 'Unknown CoinJar',
+              relationship: invitation.recipient_coinjar?.relationship || 'Unknown',
+              total_amount: 0, // Default values for invited jars
+              target_amount: 100,
+              percent_complete: 0,
+              delivery_status: 'pending'
+            };
+          }) || [];
+          
+          setInvitedJars(processedInvitations);
+        }
         
         // Mock notifications - replace with real notifications in production
         setNotifications([
