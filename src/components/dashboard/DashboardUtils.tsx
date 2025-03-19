@@ -1,7 +1,9 @@
 
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, Filter } from "lucide-react";
 import React from "react";
+import { CoinJar } from "@/types/dashboard";
 
+// Status icon functions
 export const getStatusIcon = (status: string) => {
   switch (status) {
     case 'delivered':
@@ -24,4 +26,13 @@ export const getStatusText = (status: string) => {
     default:
       return 'Pending';
   }
+};
+
+// Filter function for CoinJars
+export const filterJarsByStatus = (jars: CoinJar[], status: string | null) => {
+  if (!status || status === 'all') {
+    return jars;
+  }
+  
+  return jars.filter(jar => jar.delivery_status === status);
 };
