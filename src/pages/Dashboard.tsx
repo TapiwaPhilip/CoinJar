@@ -54,12 +54,16 @@ const Dashboard = () => {
           const deliveryStatuses = ['pending', 'processing', 'delivered'];
           const randomStatus = deliveryStatuses[Math.floor(Math.random() * deliveryStatuses.length)];
           
+          // Fix the type error by ensuring target_amount and percent_complete are numbers
+          const targetAmount = 100; // Example target, replace with real target from DB
+          const percentComplete = Math.min(100, Math.round((totalAmount / targetAmount) * 100));
+          
           return {
             ...jar,
             total_amount: totalAmount,
             delivery_status: randomStatus,
-            target_amount: 100, // Example target, replace with real target from DB
-            percent_complete: Math.min(100, Math.round((totalAmount / 100) * 100))
+            target_amount: targetAmount,
+            percent_complete: percentComplete // This is a number, which is what Progress expects
           };
         });
         
