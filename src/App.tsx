@@ -10,6 +10,7 @@ import RecipientProfile from "./pages/RecipientProfile";
 import Contributions from "./pages/Contributions";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -19,14 +20,16 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/recipient-profile" element={<RecipientProfile />} />
-          <Route path="/contributions" element={<Contributions />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/recipient-profile" element={<RecipientProfile />} />
+            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
