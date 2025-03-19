@@ -24,7 +24,7 @@ const Index = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
               Create sustainable support for your loved ones through organized monthly contributions.
             </p>
-            <Link to="/dashboard">
+            <Link to="/recipient-profile">
               <Button size="lg" className="rounded-full px-8">
                 Get Started
               </Button>
