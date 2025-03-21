@@ -1,13 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Users, CreditCard, ChartBar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MainNav } from "@/components/MainNav";
-
 const Index = () => {
-  return (
-    <div className="min-h-screen">
+  return <div className="min-h-screen">
       {/* Navigation */}
       <MainNav />
       
@@ -15,9 +12,7 @@ const Index = () => {
       <section className="relative py-20 px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 slide-up">
-            <div className="inline-block px-3 py-1 mb-6 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              Family Support Made Simple
-            </div>
+            <div className="inline-block px-3 py-1 mb-6 rounded-full bg-primary/10 text-primary text-sm font-medium">Family & Friends Support Made Simple</div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               If we all contribute, nothing is impossible
             </h1>
@@ -67,8 +62,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
