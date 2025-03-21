@@ -13,7 +13,7 @@ export function MainNav() {
   return <div className="flex items-center justify-between px-6 py-4">
       <NavigationMenu>
         <NavigationMenuList>
-          <Link to="/" className="text-lg font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Coin Jars</Link>
+          <Link to="/" className="text-lg font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">CoinJars</Link>
         </NavigationMenuList>
       </NavigationMenu>
       <div className="flex items-center gap-4">
