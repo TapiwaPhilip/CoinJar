@@ -31,17 +31,13 @@ const Index = () => {
             <Card className="p-6 glass-card hover:scale-105 transition-transform duration-300">
               <Heart className="w-12 h-12 text-primary mb-4" />
               <h3 className="font-semibold mb-2">Support Together</h3>
-              <p className="text-sm text-muted-foreground">
-                Pool resources with family members to make a meaningful impact.
-              </p>
+              <p className="text-sm text-muted-foreground">Pool resources with family & friends to make a meaningful impact.</p>
             </Card>
 
             <Card className="p-6 glass-card hover:scale-105 transition-transform duration-300">
               <Users className="w-12 h-12 text-primary mb-4" />
               <h3 className="font-semibold mb-2">Easy Collaboration</h3>
-              <p className="text-sm text-muted-foreground">
-                Invite family members and manage contributions seamlessly.
-              </p>
+              <p className="text-sm text-muted-foreground">Invite family & friends to a dedicated CoinJar and manage contributions seamlessly.</p>
             </Card>
 
             <Card className="p-6 glass-card hover:scale-105 transition-transform duration-300">
