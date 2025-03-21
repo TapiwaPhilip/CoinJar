@@ -10,13 +10,13 @@ import { LoadingDashboard } from "@/components/dashboard/LoadingDashboard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const { loading, myJars, invitedJars, notifications } = useDashboardData(user?.id);
+  const isMobile = useIsMobile();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -36,27 +36,17 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-b from-background to-muted">
+    <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto max-w-6xl">
-        <div className="flex justify-between items-center mb-6">
-          <DashboardHeader />
-          <Button 
-            variant="outline" 
-            className="rounded-full px-4 py-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all"
-            onClick={() => signOut()}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
+        <DashboardHeader signOut={signOut} isMobile={isMobile} />
         
         <DashboardSummary myJars={myJars} notifications={notifications} />
 
         <Tabs defaultValue="my-jars" className="mb-8">
-          <TabsList className="mb-4">
-            <TabsTrigger value="my-jars">My CoinJars</TabsTrigger>
-            <TabsTrigger value="invitations">Invited Jars</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsList className={`mb-4 ${isMobile ? 'flex w-full' : ''}`}>
+            <TabsTrigger value="my-jars" className={isMobile ? 'flex-1' : ''}>My CoinJars</TabsTrigger>
+            <TabsTrigger value="invitations" className={isMobile ? 'flex-1' : ''}>Invited Jars</TabsTrigger>
+            <TabsTrigger value="notifications" className={isMobile ? 'flex-1' : ''}>Notifications</TabsTrigger>
           </TabsList>
           
           <TabsContent value="my-jars">
