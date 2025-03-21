@@ -11,6 +11,8 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Dashboard = () => {
   const { user, signOut, isLoading } = useAuth();
@@ -36,9 +38,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-b from-background to-muted">
+    <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-b from-background to-muted relative">
       <div className="container mx-auto max-w-6xl">
-        <DashboardHeader signOut={signOut} isMobile={isMobile} />
+        <DashboardHeader signOut={signOut} isMobile={isMobile} showSignOutButton={!isMobile} />
         
         <DashboardSummary myJars={myJars} notifications={notifications} />
 
@@ -61,6 +63,20 @@ const Dashboard = () => {
             <NotificationsTab notifications={notifications} />
           </TabsContent>
         </Tabs>
+        
+        {/* Mobile Sign Out button at bottom */}
+        {isMobile && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border z-10">
+            <Button 
+              variant="outline" 
+              className="w-full rounded-full gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all justify-center"
+              onClick={signOut}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

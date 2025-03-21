@@ -6,9 +6,10 @@ import { Plus, LogOut } from "lucide-react";
 interface DashboardHeaderProps {
   signOut: () => void;
   isMobile?: boolean;
+  showSignOutButton?: boolean;
 }
 
-export const DashboardHeader = ({ signOut, isMobile }: DashboardHeaderProps) => {
+export const DashboardHeader = ({ signOut, isMobile, showSignOutButton = true }: DashboardHeaderProps) => {
   return (
     <div className="mb-6">
       <div className={`flex ${isMobile ? 'flex-col' : 'justify-between'} items-start md:items-center gap-4 md:gap-0`}>
@@ -22,14 +23,17 @@ export const DashboardHeader = ({ signOut, isMobile }: DashboardHeaderProps) => 
             </Button>
           </Link>
           
-          <Button 
-            variant="outline" 
-            className={`rounded-full gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all ${isMobile ? 'w-full justify-center' : ''}`}
-            onClick={signOut}
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          {/* Only show sign out button here if not mobile or explicitly requested */}
+          {(!isMobile && showSignOutButton) && (
+            <Button 
+              variant="outline" 
+              className="rounded-full gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all"
+              onClick={signOut}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          )}
         </div>
       </div>
     </div>
